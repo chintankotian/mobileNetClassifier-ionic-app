@@ -1,5 +1,7 @@
 {
   "name": "mobileNetClassifier",
-  "integrations": {},
+  "integrations": {
+    "cordova": {}
+  },
   "type": "angular"
 }
