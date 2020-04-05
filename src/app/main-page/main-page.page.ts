@@ -4,6 +4,7 @@ import { HttpClient } from "@angular/common/http";
 // import { url } from 'inspector';
 import { map } from 'rxjs/operators';
 import { Camera,CameraOptions } from "@ionic-native/camera/ngx";
+import {  CameraPreview, CameraPreviewPictureOptions, CameraPreviewOptions, CameraPreviewDimensions } from "@ionic-native/camera-preview/ngx";
 @Component({
   selector: 'app-main-page',
   templateUrl: './main-page.page.html',
@@ -25,17 +26,39 @@ export class MainPagePage implements OnInit {
     
   constructor(
     public http:HttpClient,
-    private camera : Camera
+    private camera : Camera,
+    private cameraPreview : CameraPreview
     ) {
-      const options: CameraOptions = {
-        quality: 100,
-        destinationType: this.camera.DestinationType.FILE_URI,
-        encodingType: this.camera.EncodingType.JPEG,
-        mediaType: this.camera.MediaType.PICTURE,
-        targetWidth: 224,
-        targetHeight: 224
+      // const options: CameraOptions = {
+      //   quality: 100,
+      //   destinationType: this.camera.DestinationType.FILE_URI,
+      //   encodingType: this.camera.EncodingType.JPEG,
+      //   mediaType: this.camera.MediaType.PICTURE,
+      //   targetWidth: 224,
+      //   targetHeight: 224
+      // }
+      const options: CameraPreviewOptions = {
+        x: 0,
+        y: 0,
+        width: window.screen.width,
+        height: window.screen.height,
+        camera: 'rear',
+        tapPhoto: true,
+        previewDrag: true,
+        // toBack: true,
+        alpha: 1
       }
       this.options = options;
+      
+      // start camera
+      this.cameraPreview.startCamera(this.options).then(
+        (res) => {
+          console.log(res)
+        },
+        (err) => {
+          console.log(err)
+        });
+      
      }
 
   ngOnInit() {
@@ -68,23 +91,24 @@ export class MainPagePage implements OnInit {
     im.src = this.src
     console.log('inside predict')
     im.onload = () => {
-      const pred = tf.tidy(() => {
-              console.log('inside image on load')
-              console.log(im)
-              var a = tf.browser.fromPixels(im, 3).resizeBilinear([224,224])
-              console.log('test1')
-              a = tf.div(a,255.)
-              console.log('test2')
-              var input_4d = a.reshape([1,224,224,3])
-              console.log('test3')
-              // var input_4d = tf.tensor4d(a.dataSync())
-              var pred = this.model.predictOnBatch(input_4d)
-              console.log('test4')
-              var pred_class = Array.from(pred.argMax(1).dataSync())
-              console.log('test5')
-              var index = pred_class['0'] 
-              this.pred_class_string = this.class[index].join('-')
-              console.log(this.class[index])
+      const pred = tf.tidy(() => 
+      {
+        console.log('inside image on load')
+        console.log(im)
+        var a = tf.browser.fromPixels(im, 3).resizeBilinear([224,224])
+        console.log('test1')
+        a = tf.div(a,255.)
+        console.log('test2')
+        var input_4d = a.reshape([1,224,224,3])
+        console.log('test3')
+        // var input_4d = tf.tensor4d(a.dataSync())
+        var pred = this.model.predictOnBatch(input_4d)
+        console.log('test4')
+        var pred_class = Array.from(pred.argMax(1).dataSync())
+        console.log('test5')
+        var index = pred_class['0'] 
+        this.pred_class_string = this.class[index].join('-')
+        console.log(this.class[index])
       });
             }
   }

@@ -10,6 +10,7 @@ import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { HttpClientModule } from "@angular/common/http";
 import { Camera } from "@ionic-native/camera/ngx";
+import { CameraPreview } from "@ionic-native/camera-preview/ngx";
 @NgModule({ 
   declarations: [AppComponent],
   entryComponents: [],
@@ -18,6 +19,7 @@ import { Camera } from "@ionic-native/camera/ngx";
     StatusBar,
     SplashScreen,
     Camera,
+    CameraPreview,
     // HttpClient,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
   ],
