@@ -5,6 +5,7 @@ import { HttpClient } from "@angular/common/http";
 import { map } from 'rxjs/operators';
 import { Camera,CameraOptions } from "@ionic-native/camera/ngx";
 import {  CameraPreview, CameraPreviewPictureOptions, CameraPreviewOptions, CameraPreviewDimensions } from "@ionic-native/camera-preview/ngx";
+import { Platform } from "@ionic/angular";
 @Component({
   selector: 'app-main-page',
   templateUrl: './main-page.page.html',
@@ -20,66 +21,78 @@ export class MainPagePage implements OnInit {
   class : any;
   model : any;
   options : any
-  pred_class_string : any;
+  pred_class_string : any = "Welcome";
+  picture_options: any;
   src : any;
   private win: any = window;
-    
+  window_height: any;
   constructor(
     public http:HttpClient,
     private camera : Camera,
-    private cameraPreview : CameraPreview
+    private cameraPreview : CameraPreview,
+    private platform : Platform
     ) {
-      // const options: CameraOptions = {
-      //   quality: 100,
-      //   destinationType: this.camera.DestinationType.FILE_URI,
-      //   encodingType: this.camera.EncodingType.JPEG,
-      //   mediaType: this.camera.MediaType.PICTURE,
-      //   targetWidth: 224,
-      //   targetHeight: 224
-      // }
       const options: CameraPreviewOptions = {
         x: 0,
         y: 0,
         width: window.screen.width,
-        height: window.screen.height,
+        height: window.screen.height*0.7,
         camera: 'rear',
-        tapPhoto: true,
-        previewDrag: true,
+        tapPhoto: false,
+        previewDrag: false,
         // toBack: true,
         alpha: 1
       }
       this.options = options;
-      
+      const picture_options : CameraPreviewPictureOptions =
+        {
+          width : 224,
+          height : 224,
+          quality : 85
+        }
+      this.picture_options = picture_options
       // start camera
-      this.cameraPreview.startCamera(this.options).then(
-        (res) => {
-          console.log(res)
-        },
-        (err) => {
-          console.log(err)
-        });
+      
       
      }
 
   ngOnInit() {
+    this.window_height = window.screen.height;
     this.loadMOdel()
     this.http.get('assets/classes.json').subscribe(data =>{ 
     this.class = data;
-    console.log(this.class[0])
+    this.cameraPreview.startCamera(this.options).then(
+      (res) => {
+        console.log(res)
+      },
+      (err) => {
+        console.log(err)
+      });
+    setInterval(() =>
+    {
+      this.take_pic()
+    },100);
    });  
     // const image = document.querySelector("#img-content")
     // const t = tf.browser.fromPixels(image)
   }
+
+  ionViewDidEnter(){
+    this.platform.backButton.subscribe(()=>{
+        navigator['app'].exitApp();
+    });
+}
   
 
-  take_pic()
+  async take_pic()
   {
-    this.camera.getPicture(this.options).then((imageData) => {
+    this.cameraPreview.takeSnapshot({quality: 85}).then((imageData) => {
       // imageData is either a base64 encoded string or a file URI
       // If it's base64 (DATA_URL):
-      // let base64Image = 'data:image/jpeg;base64,' + imageData;
-      this.src = this.win.Ionic.WebView.convertFileSrc(imageData);
-      console.log("captured image data -"+imageData)
+      let base64Image = 'data:image/jpeg;base64,' + imageData;
+      console.log('image  data without formatting = '+imageData)
+      this.src = this.win.Ionic.WebView.convertFileSrc(base64Image);
+      console.log("image data after formatting image data -"+base64Image)
       this.predict()
     }, (err) => {
       // Handle error
@@ -90,8 +103,8 @@ export class MainPagePage implements OnInit {
     const im = new Image()
     im.src = this.src
     console.log('inside predict')
-    im.onload = () => {
-      const pred = tf.tidy(() => 
+     im.onload = () => {
+      tf.tidy(() => 
       {
         console.log('inside image on load')
         console.log(im)
@@ -107,8 +120,7 @@ export class MainPagePage implements OnInit {
         var pred_class = Array.from(pred.argMax(1).dataSync())
         console.log('test5')
         var index = pred_class['0'] 
-        this.pred_class_string = this.class[index].join('-')
-        console.log(this.class[index])
+        this.pred_class_string = this.class[index][1].split('_').join(' ')
       });
             }
   }
